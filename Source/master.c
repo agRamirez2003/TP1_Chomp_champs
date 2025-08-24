@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <semaphore.h>
 #include "../Libraries/playerslib.h"
 
@@ -24,6 +25,7 @@ typedef struct {
     int cantPlayers;
     int delay;
     char *view;
+    char *playerPaths[MAX_PLAYERS];
 } Parameters;
 
 typedef struct{
@@ -66,8 +68,54 @@ void initializeGameState(GameState *gameState, Parameters *params) {
     initializeBoard(gameState->board, params->width, params->height, params->seed);
 }
 
+void forkPlayers(GameState *gameState, char* playerPaths[MAX_PLAYERS] , int pipesFD[MAX_PLAYERS][2]) {
+    for (int i = 0; i < gameState->cantPlayers; i++) {
+        if (pipe(pipesFD[i]) == -1)
+        {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+        gameState->players[i].pid = fork();
+        if (gameState->players[i].pid == -1)
+        {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+
+        if (gameState->players[i].pid == 0)
+        {   
+            //Cierro pipes de hijos anteriores
+            for (int j = 0; j < i; j++) {
+                close(pipesFD[j][0]);
+            }
+            close(pipesFD[i][0]);
+            dup2(pipesFD[i][1], STDOUT_FILENO);
+            close(pipesFD[i][1]);
+            char *args[4];
+            char aux[50];
+            strcpy(aux, playerPaths[i]);
+            args[0] = basename(aux); // nombre del ejecutable
+            char widthAux[5], heightAux[10];
+            snprintf(widthAux, sizeof(widthAux), "%d", gameState->width);
+            snprintf(heightAux, sizeof(heightAux), "%d", gameState->height);
+            args[1] = widthAux;
+            args[2] = heightAux;
+            args[3] = NULL;
+            int error = execve(playerPaths[i], args, NULL);
+            if (error == -1)
+            {
+                perror("view execve failed");
+                exit(EXIT_FAILURE);
+            }
+        }
+        else
+        {
+            close(pipesFD[i][1]);
+        }
+    }
+}
+
 void initializeSHM(GameState *gameState, Parameters *params, Semaphores *semaphores) {
-    // funcion para inicializar el estado del juego y los semaforos
     initializeGameState(gameState, params);
     initializeSemaphores(semaphores);
 }
@@ -81,7 +129,9 @@ int main (int argc, char *argv[]){
 
     initializeSHM(&gameState, &params, &semaphores);
 
-    
+    int pipesFD[MAX_PLAYERS][2];
+    forkPlayers(&gameState, params.playerPaths, pipesFD);
+
     //Loop de juego
     while (!gameState.gameFinished)
     {
