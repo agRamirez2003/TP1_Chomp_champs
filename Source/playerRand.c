@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include "Headers/playerslib.h"
+#include "Libraries/playerslib.h"
 #include <limits.h>
 
 #define MAX_PLAYERS 9

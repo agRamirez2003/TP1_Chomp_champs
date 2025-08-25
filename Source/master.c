@@ -70,23 +70,21 @@ void initializeGameState(GameState *gameState, Parameters *params) {
 
 void forkPlayers(GameState *gameState, char* playerPaths[MAX_PLAYERS] , int pipesFD[MAX_PLAYERS][2]) {
     for (int i = 0; i < gameState->cantPlayers; i++) {
-        if (pipe(pipesFD[i]) == -1)
-        {
+        if (pipe(pipesFD[i]) == -1){
             perror("fork");
             exit(EXIT_FAILURE);
         }
         gameState->players[i].pid = fork();
-        if (gameState->players[i].pid == -1)
-        {
+        if (gameState->players[i].pid == -1){
             perror("fork");
             exit(EXIT_FAILURE);
         }
 
-        if (gameState->players[i].pid == 0)
-        {   
+        if (gameState->players[i].pid == 0){   
             //Cierro pipes de hijos anteriores
             for (int j = 0; j < i; j++) {
                 close(pipesFD[j][0]);
+                close(pipesFD[j][1]);
             }
             close(pipesFD[i][0]);
             dup2(pipesFD[i][1], STDOUT_FILENO);
@@ -102,14 +100,12 @@ void forkPlayers(GameState *gameState, char* playerPaths[MAX_PLAYERS] , int pipe
             args[2] = heightAux;
             args[3] = NULL;
             int error = execve(playerPaths[i], args, NULL);
-            if (error == -1)
-            {
+            if (error == -1){
                 perror("view execve failed");
                 exit(EXIT_FAILURE);
             }
         }
-        else
-        {
+        else {
             close(pipesFD[i][1]);
         }
     }
@@ -120,7 +116,7 @@ void initializeSHM(GameState *gameState, Parameters *params, Semaphores *semapho
     initializeSemaphores(semaphores);
 }
 
-int main (int argc, char *argv[]){
+int main (int argc, char *argv[]) {
     GameState gameState;
     Semaphores semaphores;
     Parameters params;
@@ -133,8 +129,7 @@ int main (int argc, char *argv[]){
     forkPlayers(&gameState, params.playerPaths, pipesFD);
 
     //Loop de juego
-    while (!gameState.gameFinished)
-    {
+    while (!gameState.gameFinished) {
 
         sem_wait(&semaphores.turnstile);
         sem_wait(&semaphores.readWriteMutex);
