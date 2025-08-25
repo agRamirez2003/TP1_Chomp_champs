@@ -3,19 +3,12 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include "../Libraries/playerslib.h"
+#include "../Libraries/gamelib.h"
 
-#define MAX_PLAYERS 9
 #define SHM_STATE_NAME "/game_state"
 #define SHM_SEMAPHORES_NAME "/game_semaphores"
 
-typedef struct {
-    unsigned short width;        // Ancho del tablero
-    unsigned short height;       // Alto del tablero
-    unsigned int cantPlayers;    // Cantidad de jugadores
-    Player players[MAX_PLAYERS]; // Lista de jugadores
-    bool gameFinished;           // Indica si el juego se ha terminado
-    int board[];                 // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1
-} GameState;
+
 
 typedef struct {
     int width;
@@ -61,10 +54,10 @@ void initializeGameState(GameState *gameState, Parameters *params) {
     gameState->cantPlayers = params->cantPlayers;
     gameState->gameFinished = false;
 
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        //TODO:Inicializar jugadores
+    for (int i = 0; i < gameState->cantPlayers; i++) {
+        gameState->players[i] = createNewPlayer(params->playerPaths[i]);
     }
-    //TODO: libreria para lo relacionado al juego (como esta funcion)
+
     initializeBoard(gameState->board, params->width, params->height, params->seed);
 }
 
