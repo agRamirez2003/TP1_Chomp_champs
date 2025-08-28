@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include <stdbool.h>
+#include <sys/select.h>
+#include <sys/time.h>
 #include "../Libraries/playerslib.h"
 #include "../Libraries/gamelib.h"
 
@@ -104,6 +107,13 @@ void forkPlayers(GameState *gameState, char* playerPaths[MAX_PLAYERS] , int pipe
     }
 }
 
+int prepareFDSet(fd_set* set, Players players[MAX_PLAYERS]){
+    FD_ZERO(set);
+    int maxFD= -1
+
+    return maxFD;
+}
+
 void initializeSHM(GameState *gameState, Parameters *params, Semaphores *semaphores) {
     initializeGameState(gameState, params);
     initializeSemaphores(semaphores);
@@ -121,9 +131,17 @@ int main (int argc, char *argv[]) {
     int pipesFD[MAX_PLAYERS][2];
     forkPlayers(&gameState, params.playerPaths, pipesFD);
 
+    //int moves[MAX_PLAYERS];
+    fd_set readablePipes
+    int maxFD
+    bool validMove[MAX_PLAYERS];     // indica si el movimiento del jugador i fue hecho dentro del tablero
+    bool block[MAX_PLAYERS];         // indica si hay que bloquear al jugador i
+    bool everyoneBlocked;            // flag para terminar el juego si todos los jugadores estan bloqueados
+    int landingSquares[MAX_PLAYERS]; // index de board[] donde el jugador desea moverse (no se verifica si hay un jugador dentro porque podria haber una colision entre jugadores)
     //Loop de juego
     while (!gameState.gameFinished) {
-
+        maxFD = prepareFDSet(&readablePipes, gameState.players);
+        //readMoves(moves);
         sem_wait(&semaphores.turnstile);
         sem_wait(&semaphores.readWriteMutex);
 
