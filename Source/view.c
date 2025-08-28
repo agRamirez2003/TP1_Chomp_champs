@@ -12,7 +12,21 @@
 #define MAX_PLAYERS 9
 
 #define SHM_STATE_NAME "/game_state"
-#define SHM_SEMAPHORES_NAME "/game_semaphores"
+#define SHM_SEMAPHORES_NAME "/game_sync"
+
+
+//Colores para los distintos jugadores
+static const char *colors[MAX_PLAYERS] = {
+    "\033[31m", // Rojo
+    "\033[32m", // Verde
+    "\033[33m", // Amarillo
+    "\033[34m", // Azul
+    "\033[35m", // Magenta
+    "\033[36m", // Cyan
+    "\033[37m", // Blanco
+    "\033[90m", // Gris
+    "\033[91m"  // Rojo claro
+};
 
 typedef struct {
 char playerName[16]; // Nombre del jugador
@@ -57,13 +71,73 @@ static void clearScreen(){
 
 
 
-static void displayGameState(const GameState *g) {
+static void showPlayers(const GameState *g) {
+    printf("=== JUGADORES ===\n");
+    for (int i = 0; i < g->cantPlayers; i++) {
+        Player p = g->players[i];
+        printf("Jugador %d: %s\n", i, p.playerName);
+        printf("  Puntaje: %u\n", p.score);
+        printf("  Posición: (%hu, %hu)\n", p.x, p.y);
+        printf("  Movimientos válidos: %u\n", p.validMoves);
+        printf("  Movimientos inválidos: %u\n", p.invalidMoves);
+        printf("  Estado: %s\n", p.isBlocked ? "BLOQUEADO" : "ACTIVO");
+        printf("---\n");
+    }
+}           
+
+static void showGameState(const GameState *g, const char *colors[MAX_PLAYERS]) {
     clearScreen();
     printf("=== ESTADO ===\n");
     printf("Dimensiones: %hu x %hu\n", g->width, g->height);
     printf("Jugadores: %u\n", g->cantPlayers);
     printf("Terminado: %s\n", g->gameFinished ? "sí" : "no");
+    showPlayers(g);
+    showBoard(g, colors);
     printf("==============\n");
+
+}
+
+//revisarlo despues denuevo <*:)
+void showBoard(const GameState *g, const char *colors[MAX_PLAYERS]) {
+    int width = g->width;
+    int height = g->height;
+    const char *white = "\033[37m";
+    const char *gray  = "\033[90m";
+    const char *reset = "\033[0m";
+
+    printf("=== TABLERO ===\n");
+
+    
+    printf("   ");
+    for (int x = 0; x < width; x++) {
+        printf("%2d ", x);
+    }
+    printf("\n");
+
+    for (int y = 0; y < height; y++) {
+        
+        printf("%2d ", y);
+
+        for (int x = 0; x < width; x++) {
+            int v = g->board[y * width + x];
+
+            if (v > 0) {
+                // Recompensa 1-9
+                printf("%s%2d%s ", white, v, reset);
+            } else {
+                // Celda ocupada por el jugadorr
+                int owner = -v;
+
+                if (owner >= 0 && owner < (int)g->cantPlayers && owner < MAX_PLAYERS) {
+                    printf("%sJ%-1d%s ", colors[owner], owner, reset);
+                } else {
+                    // valor out of bound - checkear
+                    printf("%s ? %s ", gray, reset);
+                }
+            }
+        }
+        printf("\n");
+    }
 }
 
 //Main
@@ -103,7 +177,7 @@ int main(int argc, char *argv[]) {
  
     while(1) {
      sem_wait(&sync->readyToPrint);
-     displayGameState(game);                 // espero para printear
+     showGameState(game, colors);                 // espero para printear
     if (game->gameFinished) {
         sem_post(&sync->finishedPrinting);
         break;
