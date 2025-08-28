@@ -61,8 +61,9 @@ sem_t playerTurn[MAX_PLAYERS]; // Le indican a cada jugador que puede enviar 1 m
 } Semaphores;
 
 
+//prototipos
+void showBoard(const GameState *g, const char *colors[MAX_PLAYERS]);
 
-//
 
 static void clearScreen(){
     printf("\033[2J\033[H");
