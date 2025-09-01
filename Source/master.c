@@ -107,9 +107,9 @@ void forkPlayers(GameState *gameState, char* playerPaths[MAX_PLAYERS] , int pipe
     }
 }
 
-int prepareFDSet(fd_set* set, Players players[MAX_PLAYERS]){
+int prepareFDSet(fd_set* set, Player players[MAX_PLAYERS]){
     FD_ZERO(set);
-    int maxFD= -1
+    int maxFD= -1;
 
     return maxFD;
 }
@@ -132,8 +132,8 @@ int main (int argc, char *argv[]) {
     forkPlayers(&gameState, params.playerPaths, pipesFD);
 
     //int moves[MAX_PLAYERS];
-    fd_set readablePipes
-    int maxFD
+    fd_set readablePipes;
+    int maxFD;
     bool validMove[MAX_PLAYERS];     // indica si el movimiento del jugador i fue hecho dentro del tablero
     bool block[MAX_PLAYERS];         // indica si hay que bloquear al jugador i
     bool everyoneBlocked;            // flag para terminar el juego si todos los jugadores estan bloqueados
