@@ -9,8 +9,9 @@
 #include "../Libraries/gamelib.h"
 
 #define SHM_STATE_NAME "/game_state"
-#define SHM_SEMAPHORES_NAME "/game_semaphores"
+#define SHM_SEMAPHORES_NAME "/game_sync"
 
+#define SHM_QUANT 2 
 
 
 typedef struct {
@@ -37,7 +38,7 @@ void getParameters(int argc, char *argv[], Parameters *params) {
     // TODO: funcion para inicializar los parametros
 }
 
-void initializeSemaphores(Semaphores *semaphores) {
+int initializeSemaphores(Semaphores *semaphores) {
     int shm_semaphores_fd;
     semaphores = (Semaphores *) createSHM(SHM_SEMAPHORES_NAME, sizeof(Semaphores), &shm_semaphores_fd);
     sem_init(&semaphores->readyToPrint, 1, 0);
@@ -46,9 +47,10 @@ void initializeSemaphores(Semaphores *semaphores) {
     sem_init(&semaphores->readWriteMutex, 1, 1);
     sem_init(&semaphores->cantReadersMutex, 1, 1);
     semaphores->cantReading = 0;
+    return shm_semaphores_fd;
 }
 
-void initializeGameState(GameState *gameState, Parameters *params) {
+int initializeGameState(GameState *gameState, Parameters *params) {
     int shm_state_fd;
     gameState = (GameState *) createSHM(SHM_STATE_NAME, sizeof(GameState) + params->width * params->height * sizeof(int), &shm_state_fd);
     
@@ -62,6 +64,7 @@ void initializeGameState(GameState *gameState, Parameters *params) {
     }
 
     initializeBoard(gameState->board, params->width, params->height, params->seed);
+    return shm_state_fd;
 }
 
 void forkPlayers(GameState *gameState, char* playerPaths[MAX_PLAYERS] , int pipesFD[MAX_PLAYERS][2]) {
@@ -107,26 +110,36 @@ void forkPlayers(GameState *gameState, char* playerPaths[MAX_PLAYERS] , int pipe
     }
 }
 
-int prepareFDSet(fd_set* set, Player players[MAX_PLAYERS]){
-    FD_ZERO(set);
+int prepareFDSet(fd_set* set, bool block[MAX_PLAYERS], int cantPLayers,int fds[MAX_PLAYERS][2]) {
+    FD_ZERO(set);           
     int maxFD= -1;
 
+    for (size_t i = 0; i < cantPLayers; i++){
+        if (!block[i]) {
+            FD_SET(fds[i][0], set);
+            if (fds[i][0] > maxFD) {
+                maxFD = fds[i][0];
+            }
+        }
+    }
+    
     return maxFD;
 }
-
-void initializeSHM(GameState *gameState, Parameters *params, Semaphores *semaphores) {
-    initializeGameState(gameState, params);
-    initializeSemaphores(semaphores);
+//Si se agregan mas SHM, tambien cambiar el define de SHM_QUANT
+void initializeSHM(GameState *gameState, Parameters *params, Semaphores *semaphores, int SHMfds[SHM_QUANT]) {
+    SHMfds[0]=initializeGameState(gameState, params);
+    SHMfds[1]=initializeSemaphores(semaphores);
 }
 
 int main (int argc, char *argv[]) {
     GameState gameState;
     Semaphores semaphores;
     Parameters params;
+    int SHMfds[SHM_QUANT];
 
     getParameters(argc, argv, &params);
 
-    initializeSHM(&gameState, &params, &semaphores);
+    initializeSHM(&gameState, &params, &semaphores, SHMfds);
 
     int pipesFD[MAX_PLAYERS][2];
     forkPlayers(&gameState, params.playerPaths, pipesFD);
@@ -136,11 +149,12 @@ int main (int argc, char *argv[]) {
     int maxFD;
     bool validMove[MAX_PLAYERS];     // indica si el movimiento del jugador i fue hecho dentro del tablero
     bool block[MAX_PLAYERS];         // indica si hay que bloquear al jugador i
-    bool everyoneBlocked;            // flag para terminar el juego si todos los jugadores estan bloqueados
+    //bool everyoneBlocked;            // flag para terminar el juego si todos los jugadores estan bloqueados
     int landingSquares[MAX_PLAYERS]; // index de board[] donde el jugador desea moverse (no se verifica si hay un jugador dentro porque podria haber una colision entre jugadores)
     //Loop de juego
     while (!gameState.gameFinished) {
-        maxFD = prepareFDSet(&readablePipes, gameState.players);
+        checkToBlockPlayers(gameState.players, gameState.cantPlayers, block);
+        maxFD = prepareFDSet(&readablePipes, block, gameState.cantPlayers,pipesFD);
         //readMoves(moves);
         sem_wait(&semaphores.turnstile);
         sem_wait(&semaphores.readWriteMutex);
