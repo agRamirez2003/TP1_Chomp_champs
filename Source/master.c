@@ -31,7 +31,8 @@ typedef struct{
     sem_t turnstile;          // Mutex to prevent starvation
     sem_t readWriteMutex;     // Read/Write Game state mutex 
     sem_t cantReadersMutex;   // Mutex for turnstile counter
-    unsigned int cantReading; // Number of players reading state 
+    unsigned int cantReading; // Number of players reading state
+    sem_t readedMove[MAX_PLAYERS] // 
 } Semaphores;
 
 void getParameters(int argc, char *argv[], Parameters *params) {
@@ -151,15 +152,38 @@ int main (int argc, char *argv[]) {
     bool block[MAX_PLAYERS];         // indica si hay que bloquear al jugador i
     //bool everyoneBlocked;            // flag para terminar el juego si todos los jugadores estan bloqueados
     int landingSquares[MAX_PLAYERS]; // index de board[] donde el jugador desea moverse (no se verifica si hay un jugador dentro porque podria haber una colision entre jugadores)
+    int moves[MAX_PLAYERS];            // movimiento que desea hacer el jugador i (-1 si no se mueve, 0-8 para moverse en alguna direccion)
     //Loop de juego
     while (!gameState.gameFinished) {
         checkToBlockPlayers(gameState.players, gameState.cantPlayers, block);
         maxFD = prepareFDSet(&readablePipes, block, gameState.cantPlayers,pipesFD);
-        //readMoves(moves);
+        checkBlockedPlayers(block, &gameState);
+        //readMoves(moves); //usar select
+        //validateMoves(moves, &gameState)
+        //calculateNextPosition(landingSquares, moves, gameState);
         sem_wait(&semaphores.turnstile);
         sem_wait(&semaphores.readWriteMutex);
+        if(maxFD != -1){                //revisar
+            // Zona critica: Modificar el estado del juego
+            for (int i=0; i < gameState.cantPlayers;i++){
+                if (block[i]) {
+                    gameState.players[i].isBlocked=true;
+                    continue;
+                }
+                if (moves[i]!= -1) { 
+                    if (!validMove[i] || spaceOccupied(landingSquares[i], &gameState)){
+                        gameState.players[i].invalidMoves++;
+                        continue;
+                    }
+                    movePlayer(i, landingSquares[i], &gameState);
+                    gameState.players[i].validMoves++;
+                }
+            }
+        }
+        else{
+            gameState.gameFinished= true;
+        }
 
-        // Zona critica: Modificar el estado del juego
 
         sem_post(&semaphores.readWriteMutex);
         sem_post(&semaphores.turnstile);

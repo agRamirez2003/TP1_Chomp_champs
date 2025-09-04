@@ -2,7 +2,10 @@
 #define GAMELIB_H
 
 #define MAX_PLAYERS 9
+#define POSSIBLE_MOVES 8
+
 #include "playerslib.h"
+#include <stdbool.h>
 
 typedef struct {
     unsigned short width;        // Ancho del tablero
@@ -14,5 +17,9 @@ typedef struct {
 } GameState;
 
 void initializeBoard(int* board, int width, int height, int seed);
+
+void checkBlockedPlayers(bool block[], GameState* gameState);
+
+bool spaceOccupied(landingSquare, GameState* gameState);
 
 #endif // GAMELIB_H
