@@ -7,7 +7,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
-
+#include "../Libraries/playerslib.h"
+#include "../Libraries/gamelib.h"
 
 #define MAX_PLAYERS 9
 
@@ -27,27 +28,6 @@ static const char *colors[MAX_PLAYERS] = {
     "\033[90m", // Gris
     "\033[91m"  // Rojo claro
 };
-
-typedef struct {
-char playerName[16]; // Nombre del jugador
-unsigned int score; // Puntaje
-unsigned int invalidMoves; // Cantidad de solicitudes de movimientos inválidas realizadas
-unsigned int validMoves; // Cantidad de solicitudes de movimientos válidas realizadas
-unsigned short x, y; // Coordenadas x e y en el tablero
-pid_t pid; // Identificador de proceso
-bool isBlocked; // Indica si el jugador está bloqueado
-} Player;
-
-
-
-typedef struct {
-unsigned short width; // Ancho del tablero
-unsigned short height; // Alto del tablero
-unsigned int cantPlayers; // Cantidad de jugadores
-Player players[MAX_PLAYERS]; // Lista de jugadores
-bool gameFinished; // Indica si el juego se ha terminado
-int board[]; // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1
-} GameState;
 
 
 typedef struct {

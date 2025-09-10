@@ -32,7 +32,8 @@ typedef struct{
     sem_t readWriteMutex;     // Read/Write Game state mutex 
     sem_t cantReadersMutex;   // Mutex for turnstile counter
     unsigned int cantReading; // Number of players reading state
-    sem_t readedMove[MAX_PLAYERS] // 
+    sem_t playerTurn[MAX_PLAYERS]; // Le indican a cada jugador que puede enviar 1 movimiento
+    
 } Semaphores;
 
 void getParameters(int argc, char *argv[], Parameters *params) {
