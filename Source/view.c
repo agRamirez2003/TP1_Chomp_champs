@@ -56,7 +56,7 @@ static void showPlayers(const GameState *g) {
     printf("=== JUGADORES ===\n");
     for (int i = 0; i < g->cantPlayers; i++) {
         Player p = g->players[i];
-        printf("Jugador %d: %s\n", i, p.playerName);
+        printf("Jugador %d: %s\n", i, p.name);
         printf("  Puntaje: %u\n", p.score);
         printf("  Posición: (%hu, %hu)\n", p.x, p.y);
         printf("  Movimientos válidos: %u\n", p.validMoves);

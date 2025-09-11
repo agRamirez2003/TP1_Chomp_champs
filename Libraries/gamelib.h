@@ -20,6 +20,6 @@ void initializeBoard(int* board, int width, int height, int seed);
 
 void checkBlockedPlayers(bool block[], GameState* gameState);
 
-bool spaceOccupied(landingSquare, GameState* gameState);
+bool spaceOccupied(int landingSquare, GameState* gameState);
 
 #endif // GAMELIB_H

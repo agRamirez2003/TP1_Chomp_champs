@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include "Libraries/playerslib.h"
+#include "../Libraries/playerslib.h"
 #include <limits.h>
 
 #define MAX_PLAYERS 9
@@ -132,9 +132,7 @@ int main(int argc, char *argv[])
         sync->cantReading--;
         sem_post(&sync->cantReadersMutex);
 
-        unsigned char chosenMove = rand() % 8;
-
-        write(1, &chosenMove, 1); // Send movement to master (stdout = pipe)
+		write(1, &chosenMove, 1);
 
         sleep_ms(10);
     }
