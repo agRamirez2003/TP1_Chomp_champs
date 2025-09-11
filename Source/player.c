@@ -10,6 +10,7 @@
 #include <time.h>
 
 #include "../Libraries/playerslib.h"
+#include "../Libraries/goodPlayerLib.h"
 #include <limits.h>
 
 #define MAX_PLAYERS 9
@@ -20,17 +21,6 @@
 
 #define SYNC_NAME "/game_sync"
 #define STATE_NAME "/game_state"
-
-// Assuming the structures based on your description
-typedef struct
-{
-    unsigned short width;        // Ancho del tablero
-    unsigned short height;       // Alto del tablero
-    unsigned int cantPlayers;    // Cantidad de jugadores
-    Player players[MAX_PLAYERS]; // Lista de jugadores
-    bool gameFinished;           // Indica si el juego se ha terminado
-    int board[];                 // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1
-} GameState;
 
 typedef struct
 {
@@ -131,7 +121,7 @@ int main(int argc, char *argv[])
         }
         sync->cantReading--;
         sem_post(&sync->cantReadersMutex);
-		unsigned char chosenMove = rand() % 8 + '0';
+		unsigned char chosenMove = chooseGoodMove(gameState, boardWidth, boardHeight, 0); //TODO poner el numero de jugador que seamos (ver como hacer)
 		write(1, &chosenMove, 1);
 
         sleep_ms(10);
