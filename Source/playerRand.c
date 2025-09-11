@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
         }
         sync->cantReading--;
         sem_post(&sync->cantReadersMutex);
-
+		unsigned char chosenMove = rand() % 8;
 		write(1, &chosenMove, 1);
 
         sleep_ms(10);

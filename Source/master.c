@@ -4,7 +4,8 @@
 #include <semaphore.h>
 #include <stdbool.h>
 #include <sys/select.h>
-#include <sys/time.h>
+#include <time.h>
+#include <string.h>
 #include "../Libraries/playerslib.h"
 #include "../Libraries/gamelib.h"
 
@@ -36,8 +37,44 @@ typedef struct{
     
 } Semaphores;
 
-void getParameters(int argc, char *argv[], Parameters *params) {
-    // TODO: funcion para inicializar los parametros
+int getParameters(int argc, char *argv[], Parameters *params) {
+	params->width = 10;
+	params->height = 10;
+	params->delay = 200;
+	params->timeout = 10;
+	params->seed = time(NULL);
+	params->view = NULL;
+	params->cantPlayers = 0;
+
+    for (int i = 1; i < argc; i++) {
+        char *arg = argv[i];
+        if (arg[0] == '-' && i + 1 < argc) {
+            int value = atoi(argv[++i]);   // take next as number
+            switch (arg[1]) {
+                case 'w': params->width = value; break;
+                case 'h': params->height = value; break;
+                case 'd': params->delay = value; break;
+                case 't': params->timeout = value; break;
+                case 's': params->seed = value; break;
+                case 'v': params->view = argv[i-1]; break;
+                case 'p': params->playerPaths[params->cantPlayers] = argv[i-1]; params->cantPlayers++; break;
+                default:  printf("Unknown option: %s\n", arg); return 0; break;
+            }
+        }
+    }
+	if(params->width < 10){
+		printf("width must be more or equal to 10\n");
+		return 0;
+	}
+	if(params->height < 10){
+		printf("height must be more or equal to 10\n");
+		return 0;
+	}
+	if(!params->cantPlayers){
+		printf("you must specify at least one player path using -p\n");
+		return 0;
+	}
+	return 1;
 }
 
 int initializeSemaphores(Semaphores *semaphores) {
@@ -133,13 +170,81 @@ void initializeSHM(GameState *gameState, Parameters *params, Semaphores *semapho
     SHMfds[1]=initializeSemaphores(semaphores);
 }
 
+int squareOccupied(GameState *gameState, int square){
+	return(gameState->board[square] <= 0); // A value less or equal than 0 means its occupied
+}
+
+int validSquare(GameState *gameState, int x, int y){
+	if(x < 0 || x >= gameState->width || y < 0 || y >= gameState->width){
+		return 0;
+	}
+	if(squareOccupied(gameState, gameState->width * y + x)){
+		return 0;
+	}
+	return 1;
+}
+
+int newXCalculator(currentX, move){
+	int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+	return currentX + dx[move];
+}
+
+int newYCalculator(currentY, move){
+	int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+	return currentY + dy[move];
+}
+
+int newPositionCalculator(int currentPos, int move, int width){
+	int nx = newXCalculator(currentPos % width, move);
+	int ny = newYCalculator(currentPos / width, move);
+	return (width * ny + nx);
+}
+
+int getPlayerPos(GameState *gameState, int numPlayer){
+	return (gameState->width * gameState->players[numPlayer].y + gameState->players[numPlayer].x);
+}
+
+void validateMoves(int moves[MAX_PLAYERS], GameState *gameState){
+	for(int i = 0; i < gameState->cantPlayers; i++){
+		int nx = newXCalculator(gameState->players[i].x, moves[i]);
+		int ny = newYCalculator(gameState->players[i].y, moves[i]);
+		int newPos = gameState->width * ny + nx;
+
+		if(!validSquare(gameState, nx, ny)){
+			moves[i] = -1; // no move as it was an invalid move
+		}
+	}
+}
+
+void calculateNextPosition(int landingSquares[MAX_PLAYERS], int moves[MAX_PLAYERS], GameState *gameState){
+	int startingPlayer = rand() % gameState->cantPlayers;
+	for(int i = 0; i < gameState->cantPlayers; i++){
+		int player = (i + startingPlayer) % gameState->cantPlayers;
+		int currentPos = getPlayerPos(gameState, player);
+		int desiredPos = newPositionCalculator(currentPos, moves[player], gameState->width);
+
+		if(moves[player] == -1 || squareOccupied(gameState, desiredPos)){
+			landingSquares[player] = currentPos;
+			continue;
+		}
+		landingSquares[player] = desiredPos;
+	}
+}
+
+void checkToBlockPlayers(Player *players, int cantPlayers, bool block[MAX_PLAYERS]){
+	return ; // TODO
+}
+
 int main (int argc, char *argv[]) {
     GameState gameState;
     Semaphores semaphores;
     Parameters params;
     int SHMfds[SHM_QUANT];
+	srand(time(NULL));
 
-    getParameters(argc, argv, &params);
+    if(!getParameters(argc, argv, &params)){
+		return -1;
+	}
 
     initializeSHM(&gameState, &params, &semaphores, SHMfds);
 
@@ -160,8 +265,8 @@ int main (int argc, char *argv[]) {
         maxFD = prepareFDSet(&readablePipes, block, gameState.cantPlayers,pipesFD);
         checkBlockedPlayers(block, &gameState);
         //readMoves(moves); //usar select
-        //validateMoves(moves, &gameState)
-        //calculateNextPosition(landingSquares, moves, gameState);
+        validateMoves(moves, &gameState); // verifies the validity of the moves
+        calculateNextPosition(landingSquares, moves, &gameState); // calculates the next moves without an advantage for any player
         sem_wait(&semaphores.turnstile);
         sem_wait(&semaphores.readWriteMutex);
         if(maxFD != -1){                //revisar
