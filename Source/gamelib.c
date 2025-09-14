@@ -90,7 +90,7 @@ void validateMoves(int moves[MAX_PLAYERS], GameState *gameState){
 		int newPos = gameState->width * ny + nx;
 
 		if(!validSquare(gameState, nx, ny)){
-			moves[i] = -1; // no move as it was an invalid move
+			moves[i] = INVALID_MOVE; // no move as it was an invalid move
 		}
 	}
 }

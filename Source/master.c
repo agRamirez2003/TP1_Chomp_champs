@@ -15,6 +15,7 @@
 #define SHM_QUANT 2 
 
 
+
 typedef struct {
     int width;
     int height;
@@ -221,6 +222,29 @@ void calculateNextPosition(int landingSquares[MAX_PLAYERS], int moves[MAX_PLAYER
 	}
 }
 
+int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int pipes[MAX_PLAYERS][2], int cantPlayers){
+    struct timeval tv;
+    tv.tv_sec = timeout;
+    tv.tv_usec = 0;  
+
+    int toReturn = select(maxFD +1, fdSet, NULL, NULL, &tv);
+    if (toReturn <=0){
+        return toReturn;
+    }
+    
+    for (size_t i = 0; i < cantPlayers; i++){
+        if (FD_ISSET(pipes[i][0], fdSet)){
+            unsigned char move;
+            read(pipes[i][0], &move, 1);
+            moves[i] = (int)move;
+        }
+        else{
+            moves[i] = NOT_MOVED; // no se movio
+        }
+    }
+    
+}
+
 /* void checkToBlockPlayers(Player *players, int cantPlayers, bool block[MAX_PLAYERS]){
 	return ; // TODO
 } */
@@ -241,19 +265,17 @@ int main (int argc, char *argv[]) {
     int pipesFD[MAX_PLAYERS][2];
     forkPlayers(&gameState, params.playerPaths, pipesFD);
 
-    //int moves[MAX_PLAYERS];
     fd_set readablePipes;
     int maxFD;
     bool block[MAX_PLAYERS];         // indica si hay que bloquear al jugador i
-    //bool everyoneBlocked;            // flag para terminar el juego si todos los jugadores estan bloqueados
     int landingSquares[MAX_PLAYERS]; // index de board[] donde el jugador desea moverse (no se verifica si hay un jugador dentro porque podria haber una colision entre jugadores)
     int moves[MAX_PLAYERS];            // movimiento que desea hacer el jugador i (-1 si no se mueve, 0-8 para moverse en alguna direccion)
+    int readyPipes;
     //Loop de juego
     while (!gameState.gameFinished) {
-        /* checkToBlockPlayers(gameState.players, gameState.cantPlayers, block); */
         checkBlockedPlayers(block, &gameState);
         maxFD = prepareFDSet(&readablePipes, block, gameState.cantPlayers,pipesFD);
-        //readMoves(moves); //usar select
+        readyPipes= readMoves(moves, &readablePipes, maxFD ,params.timeout, pipesFD,gameState.cantPlayers); 
         validateMoves(moves ,&gameState); // verifies the validity of the moves
         calculateNextPosition(landingSquares, moves, &gameState); // calculates the next moves without an advantage for any player
         sem_wait(&semaphores.turnstile);
@@ -265,13 +287,14 @@ int main (int argc, char *argv[]) {
                     gameState.players[i].isBlocked=true;
                     continue;
                 }
-                if (moves[i]!= -1) { 
-                    if (moves[i] -1 || spaceOccupied(landingSquares[i], &gameState)){
+                if (moves[i]!= NOT_MOVED) { 
+                    if (moves[i] == INVALID_MOVE || spaceOccupied(landingSquares[i], &gameState)){
                         gameState.players[i].invalidMoves++;
                         continue;
                     }
                     movePlayer(i, landingSquares[i], &gameState);
                     gameState.players[i].validMoves++;
+                    sema_post(&semaphores.playerTurn[i]); // Le indico al jugador que puede volver a mover
                 }
             }
         }

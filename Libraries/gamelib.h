@@ -3,6 +3,8 @@
 
 #define MAX_PLAYERS 9
 #define POSSIBLE_MOVES 8
+#define INVALID_MOVE -1
+#define NOT_MOVED -2
 
 #include "playerslib.h"
 #include <stdbool.h>
