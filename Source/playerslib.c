@@ -1,5 +1,5 @@
 #include <string.h>
-#include "Libraries/playerslib.h"
+#include "../Libraries/playerslib.h"
 
 static Player createPlayer(char name[], unsigned int score, unsigned int invalidMoves, unsigned int validMoves, unsigned short x, unsigned short y, pid_t pid, bool isBlocked)
 {

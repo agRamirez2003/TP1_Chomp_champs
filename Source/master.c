@@ -170,9 +170,9 @@ void initializeSHM(GameState *gameState, Parameters *params, Semaphores *semapho
     SHMfds[1]=initializeSemaphores(semaphores);
 }
 
-int squareOccupied(GameState *gameState, int square){
+/* int squareOccupied(GameState *gameState, int square){
 	return(gameState->board[square] <= 0); // A value less or equal than 0 means its occupied
-}
+} */
 
 int validSquare(GameState *gameState, int x, int y){
 	if(x < 0 || x >= gameState->width || y < 0 || y >= gameState->width){
@@ -204,17 +204,7 @@ int getPlayerPos(GameState *gameState, int numPlayer){
 	return (gameState->width * gameState->players[numPlayer].y + gameState->players[numPlayer].x);
 }
 
-void validateMoves(int moves[MAX_PLAYERS], GameState *gameState){
-	for(int i = 0; i < gameState->cantPlayers; i++){
-		int nx = newXCalculator(gameState->players[i].x, moves[i]);
-		int ny = newYCalculator(gameState->players[i].y, moves[i]);
-		int newPos = gameState->width * ny + nx;
 
-		if(!validSquare(gameState, nx, ny)){
-			moves[i] = -1; // no move as it was an invalid move
-		}
-	}
-}
 
 void calculateNextPosition(int landingSquares[MAX_PLAYERS], int moves[MAX_PLAYERS], GameState *gameState){
 	int startingPlayer = rand() % gameState->cantPlayers;
@@ -231,9 +221,9 @@ void calculateNextPosition(int landingSquares[MAX_PLAYERS], int moves[MAX_PLAYER
 	}
 }
 
-void checkToBlockPlayers(Player *players, int cantPlayers, bool block[MAX_PLAYERS]){
+/* void checkToBlockPlayers(Player *players, int cantPlayers, bool block[MAX_PLAYERS]){
 	return ; // TODO
-}
+} */
 
 int main (int argc, char *argv[]) {
     GameState gameState;
@@ -254,18 +244,17 @@ int main (int argc, char *argv[]) {
     //int moves[MAX_PLAYERS];
     fd_set readablePipes;
     int maxFD;
-    bool validMove[MAX_PLAYERS];     // indica si el movimiento del jugador i fue hecho dentro del tablero
     bool block[MAX_PLAYERS];         // indica si hay que bloquear al jugador i
     //bool everyoneBlocked;            // flag para terminar el juego si todos los jugadores estan bloqueados
     int landingSquares[MAX_PLAYERS]; // index de board[] donde el jugador desea moverse (no se verifica si hay un jugador dentro porque podria haber una colision entre jugadores)
     int moves[MAX_PLAYERS];            // movimiento que desea hacer el jugador i (-1 si no se mueve, 0-8 para moverse en alguna direccion)
     //Loop de juego
     while (!gameState.gameFinished) {
-        checkToBlockPlayers(gameState.players, gameState.cantPlayers, block);
-        maxFD = prepareFDSet(&readablePipes, block, gameState.cantPlayers,pipesFD);
+        /* checkToBlockPlayers(gameState.players, gameState.cantPlayers, block); */
         checkBlockedPlayers(block, &gameState);
+        maxFD = prepareFDSet(&readablePipes, block, gameState.cantPlayers,pipesFD);
         //readMoves(moves); //usar select
-        validateMoves(moves, &gameState); // verifies the validity of the moves
+        validateMoves(moves ,&gameState); // verifies the validity of the moves
         calculateNextPosition(landingSquares, moves, &gameState); // calculates the next moves without an advantage for any player
         sem_wait(&semaphores.turnstile);
         sem_wait(&semaphores.readWriteMutex);
@@ -277,7 +266,7 @@ int main (int argc, char *argv[]) {
                     continue;
                 }
                 if (moves[i]!= -1) { 
-                    if (!validMove[i] || spaceOccupied(landingSquares[i], &gameState)){
+                    if (moves[i] -1 || spaceOccupied(landingSquares[i], &gameState)){
                         gameState.players[i].invalidMoves++;
                         continue;
                     }

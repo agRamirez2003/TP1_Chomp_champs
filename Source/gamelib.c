@@ -82,3 +82,15 @@ void checkBlockedPLayers(bool block[], GameState* gameState){
 bool spaceOccupied(int landingSquare, GameState* gameState){
     return gameState->board[landingSquare] < 0;
 }
+
+void validateMoves(int moves[MAX_PLAYERS], GameState *gameState){
+	for(int i = 0; i < gameState->cantPlayers; i++){
+		int nx = newXCalculator(gameState->players[i].x, moves[i]);
+		int ny = newYCalculator(gameState->players[i].y, moves[i]);
+		int newPos = gameState->width * ny + nx;
+
+		if(!validSquare(gameState, nx, ny)){
+			moves[i] = -1; // no move as it was an invalid move
+		}
+	}
+}

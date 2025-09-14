@@ -22,4 +22,6 @@ void checkBlockedPlayers(bool block[], GameState* gameState);
 
 bool spaceOccupied(int landingSquare, GameState* gameState);
 
+void validateMoves(int moves[MAX_PLAYERS], GameState *gameState);
+
 #endif // GAMELIB_H

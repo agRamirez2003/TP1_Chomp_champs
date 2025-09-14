@@ -40,6 +40,7 @@ typedef struct
     sem_t readWriteMutex;     // Game state mutex
     sem_t cantReadersMutex;   // Mutex for F
     unsigned int cantReading; // Number of players reading state
+    sem_t playerTurn[MAX_PLAYERS];
 } Sync;
 
 void sleep_ms(int milliseconds)
@@ -49,6 +50,15 @@ void sleep_ms(int milliseconds)
     ts.tv_nsec = (milliseconds % 1000) * 1000000;
 
     nanosleep(&ts, NULL);
+}
+
+static int getMyId(GameState *gameState){
+    for (size_t i = 0; i < gameState->cantPlayers ; i++)
+    {
+        if (getpid() == gameState->players[i].pid)
+            return i;
+    }
+    return -1; //para que no de warning
 }
 
 int main(int argc, char *argv[])
@@ -86,7 +96,7 @@ int main(int argc, char *argv[])
     int boardWidth = atoi(argv[1]);
     int boardHeight = atoi(argv[2]);
     int boardSize = boardHeight * boardWidth * sizeof(int);
-
+    
     // Map shared memory into process space
     GameState *gameState = mmap(NULL, sizeof(GameState) + boardSize, PROT_READ, MAP_SHARED, shm_state, 0);
     if (gameState == MAP_FAILED)
@@ -94,10 +104,12 @@ int main(int argc, char *argv[])
         perror("mmap");
         return 1;
     }
-
+    
+    int id= getMyId(gameState);
     while (1)
     {
-
+        
+        sem_wait(&sync->playerTurn[id]); 
         sem_wait(&sync->turnstile);
         sem_post(&sync->turnstile);
 
