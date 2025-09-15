@@ -54,3 +54,5 @@ dkms.conf
 # debug information files
 *.dwo
 *.Identifier
+.vscode/settings.json
+.bash_history
