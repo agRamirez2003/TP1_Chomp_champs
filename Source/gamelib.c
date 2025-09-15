@@ -13,57 +13,18 @@ void initializeBoard(int* board, int width, int height, int seed) {
 // Verifica si hay algun lugar libre alrededor del jugador, devolviendo false si lo hay.
 static playerIsBlocked( int playerX, int playerY, int* board, int boardWidth, int boardHeight){
     int currentPos= playerY * boardWidth + playerX;
-    for (size_t i = 0; i < POSSIBLE_MOVES; i++){ //TODO: rehacerlo para que recorra el board alrededor del jugador con 2 for anidados 
-        switch (i)
-        {
-        case 0:
-            if (playerY == 0)
-                break;
-            if (board[currentPos - boardWidth] >= 0)
+    for (size_t i = 0; i < 3; i++){
+        int currentLine= playerY -1 + i;
+        if (currentLine < 0 || currentLine >= boardHeight)
+            continue;
+        for (size_t j = 0; j < 3; j++){ 
+            int currentCol= playerX -1 + j;
+            if (currentCol< 0 || currentCol>= boardWidth)
+                continue;
+            int currentSquare= currentLine*boardWidth + currentCol;
+            
+            if (board[currentSquare] >= 0)
                 return false;
-            break;
-        case 1:
-            if (playerY == 0 || playerX == boardWidth - 1)
-                break;
-            if (board[currentPos - boardWidth + 1] >= 0)
-                return false;
-            break;
-        case 2:
-            if (playerX == boardWidth - 1)
-                break;
-            if (board[currentPos + 1] >= 0)
-                return false;
-            break;
-        case 3:
-            if (playerY == boardHeight - 1 || playerX == boardWidth - 1)
-                break;
-            if (board[currentPos + boardWidth + 1] >= 0)
-                return false;
-            break;
-        case 4:
-            if (playerY == boardHeight - 1)
-                break;
-            if (board[currentPos + boardWidth] >= 0)
-                return false;
-            break;
-        case 5:
-            if (playerY == boardHeight - 1 || playerX == 0)
-                break;
-            if (board[currentPos + boardWidth - 1] >= 0)
-                return false;
-            break;
-        case 6:
-            if (playerX == 0)
-                break;
-            if (board[currentPos - 1] >= 0)
-                return false;
-            break;
-        case 7:
-            if (playerY == 0 || playerX == 0)
-                break;
-            if (board[currentPos - boardWidth - 1] >= 0)
-                return false;
-            break;
         }
     }
     return true;
