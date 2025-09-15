@@ -69,6 +69,24 @@ static playerIsBlocked( int playerX, int playerY, int* board, int boardWidth, in
     return true;
 }
 
+void calculateNextPosition(int landingSquares[MAX_PLAYERS], int moves[MAX_PLAYERS], GameState *gameState){
+    for(int i = 0; i < gameState->cantPlayers; i++){
+        int nx = newXCalculator(gameState->players[i].x, moves[i]);
+        int ny = newYCalculator(gameState->players[i].y, moves[i]);
+        landingSquares[i] = gameState->width * ny + nx;
+    }
+}
+
+int newXCalculator(currentX, move){
+	int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+	return currentX + dx[move];
+}
+
+int newYCalculator(currentY, move){
+	int dy[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+	return currentY + dy[move];
+}
+
 void checkBlockedPLayers(bool block[], GameState* gameState){
     for (size_t i = 0; i < gameState->cantPlayers; i++){
         if (gameState->players[i].isBlocked){
