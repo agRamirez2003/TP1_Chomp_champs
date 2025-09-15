@@ -270,5 +270,19 @@ int main (int argc, char *argv[]) {
         sem_post(&semaphores.readyToPrint);
         sem_wait(&semaphores.finishedPrinting);
     }
+
+	sem_close(&semaphores.readyToPrint);
+	sem_close(&semaphores.finishedPrinting);
+	sem_close(&semaphores.turnstile);
+	sem_close(&semaphores.readWriteMutex);
+	sem_close(&semaphores.cantReadersMutex);
+
+	for(int i = 0; i < gameState.cantPlayers; i++){
+		sem_close(&semaphores.playerTurn[i]);
+	}
+
+	closeSHM(gameState, sizeof(GameState) + gameState.width * gameState.height * sizeof(int), SHMfds[0], SHM_STATE_NAME);
+
+	closeSHM(semaphores, sizeof(Semaphores), SHMfds[1], SHM_SEMAPHORES_NAME);
     
 }

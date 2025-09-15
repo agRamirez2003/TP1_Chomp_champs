@@ -35,7 +35,6 @@ void *createSHM(char *name, size_t size, int *outFD)
 
 void closeSHM(void *toClose, size_t size, int fd, char *name)
 {
-
     munmap(toClose, size);
     close(fd);
     shm_unlink(name);
