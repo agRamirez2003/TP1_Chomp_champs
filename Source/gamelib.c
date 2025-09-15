@@ -23,7 +23,7 @@ static playerIsBlocked( int playerX, int playerY, int* board, int boardWidth, in
                 continue;
             int currentSquare= currentLine*boardWidth + currentCol;
             
-            if (board[currentSquare] >= 0)
+            if (board[currentSquare] > 0)
                 return false;
         }
     }
@@ -72,4 +72,12 @@ void validateMoves(int moves[MAX_PLAYERS], GameState *gameState){
 			moves[i] = INVALID_MOVE; // no move as it was an invalid move
 		}
 	}
+}
+
+void movePlayer(int playerIndex, int landingSquare, GameState *gameState){
+    int playerNumber= playerIndex*-1; 
+    int boardWidth= gameState->width;
+    gameState->board[landingSquare]= playerNumber; // ocupa la nueva posicion
+    gameState->players[playerIndex].x= landingSquare % boardWidth;
+    gameState->players[playerIndex].y= landingSquare / boardWidth;
 }
