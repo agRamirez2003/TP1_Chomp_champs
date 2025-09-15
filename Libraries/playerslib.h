@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <stdbool.h>
-
+#include <libgen.h>
 
 #define NAME_LENGTH 16
 

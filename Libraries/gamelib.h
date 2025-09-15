@@ -28,4 +28,6 @@ void validateMoves(int moves[MAX_PLAYERS], GameState *gameState);
 
 void calculateNextPosition(int landingSquares[MAX_PLAYERS], int moves[MAX_PLAYERS], GameState *gameState);
 
+void movePlayer(int playerIndex, int landingSquare, GameState *gameState);
+
 #endif // GAMELIB_H

@@ -12,9 +12,23 @@ static Player createPlayer(char name[], unsigned int score, unsigned int invalid
     toReturn.y = y;
     toReturn.pid = pid;
     toReturn.isBlocked = isBlocked;
+    printf("Created player %s at (%d,%d) with score %d\n", toReturn.name, toReturn.x, toReturn.y, toReturn.score);
     return toReturn;
 }
 
+static void getPlayerName(char *path, char *output)
+{
+    char aux[50];
+    strcpy(aux, path);
+    char *name = basename(aux);
+    int i = 0;
+    while (aux[i] != '\0' && aux[i] != '.' && i < sizeof(output) - 1)
+    {
+        output[i] = name[i];
+        i++;
+    }
+    output[i] = '\0';
+}
 Player createNewPlayer(char* path)
 {
     char name[NAME_LENGTH];
