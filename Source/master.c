@@ -200,13 +200,17 @@ void forkPlayers(GameState *gameState, char playerPaths[MAX_PLAYERS][50] , int p
     }
 }
 
-int forkView(char* viewPath, GameState* gameState){
+int forkView(char* viewPath, GameState* gameState, int pipesFD[MAX_PLAYERS][2]){
     int viewPid = fork();
     if (viewPid == -1){
         perror("fork");
         exit(EXIT_FAILURE);
     }
     if (viewPid == 0){
+        for (int i = 0; i < gameState->cantPlayers ; i++) {
+                close(pipesFD[i][0]);
+                close(pipesFD[i][1]);
+            }
         char *args[4];
         char aux[50];
         strcpy(aux, viewPath);
@@ -324,7 +328,7 @@ int main (int argc, char *argv[]) {
     
     int viewPid;
     if (params.viewFlag != 0){
-        viewPid=forkView(params.view,gameState);
+        viewPid=forkView(params.view,gameState,pipesFD);
         printf("View process created with PID %d\n", viewPid);
     }
 
