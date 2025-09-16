@@ -1,24 +1,23 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2
+CFLAGS = -Wall -pedantic -std=c99
+LIBS = gamelib.c playerslib.c shmlib.c
 
-# Libraries for master
-MASTER_DEPS = gamelib.c shmlib.c playerslib.c
+# Archivos principales que producen ejecutables
+TARGETS = master playerRand view
 
-# Executables
-all: master player view
+all: $(TARGETS)
 
-# Master depends on libs
-master: master.c $(MASTER_DEPS)
-	$(CC) $(CFLAGS) $^ -o $@
+master: master.c $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^
+	chmod 777 $@
 
-# Player is standalone
-player: player.c
-	$(CC) $(CFLAGS) $< -o $@
+playerRand: playerRand.c $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^
+	chmod 777 $@
 
-# View is standalone
-view: view.c
-	$(CC) $(CFLAGS) $< -o $@
+view: view.c $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^
+	chmod 777 $@
 
-# Clean
 clean:
-	rm -f master player view
+	rm -f $(TARGETS) *.o
