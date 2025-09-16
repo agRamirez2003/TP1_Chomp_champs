@@ -324,6 +324,7 @@ int main (int argc, char *argv[]) {
     int viewPid;
     if (params.viewFlag != 0){
         viewPid=forkView(params.view,gameState);
+        printf("View process created with PID %d\n", viewPid);
     }
 
     fd_set readablePipes;
@@ -367,10 +368,6 @@ int main (int argc, char *argv[]) {
                 sem_post(&semaphores->playerTurn[i]); // Le indico al jugador que puede volver a mover
             }
         }
-        
-        
-
-
         sem_post(&semaphores->readWriteMutex);
         sem_post(&semaphores->turnstile);
 
@@ -387,6 +384,7 @@ int main (int argc, char *argv[]) {
             for (size_t i = 0; i < gameState->cantPlayers; i++){
                 sem_post(&semaphores->playerTurn[i]);
             }
+            sem_post(&semaphores->readyToPrint);
         }
         
     }
