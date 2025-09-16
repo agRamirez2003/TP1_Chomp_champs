@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 199309L
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -42,6 +43,15 @@ typedef struct{
     sem_t playerTurn[MAX_PLAYERS]; // Le indican a cada jugador que puede enviar 1 movimiento
     
 } Semaphores;
+
+void sleepMs(int milliseconds)
+{
+    struct timespec ts;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+
+    nanosleep(&ts, NULL);
+}
 
 int getParameters(int argc, char *argv[], Parameters *params){
 	params->width = 10;
@@ -138,7 +148,6 @@ int initializeGameState(GameState **gameState, Parameters *params) {
     (*gameState)->gameFinished = false;
 
     for (int i = 0; i < (*gameState)->cantPlayers; i++) {
-        printf("Creating player %s\n", params->playerPaths[i]);
         (*gameState)->players[i] = createNewPlayer(params->playerPaths[i]);
     }
 
@@ -152,15 +161,14 @@ void forkPlayers(GameState *gameState, char playerPaths[MAX_PLAYERS][50] , int p
             perror("fork");
             exit(EXIT_FAILURE);
         }
-        gameState->players[i].pid = fork();
-        if (gameState->players[i].pid == -1){
+        int pid = fork();
+        if (pid == -1){
             perror("fork");
             exit(EXIT_FAILURE);
         }
 
-        if (gameState->players[i].pid == 0){   
+        if (pid == 0){   
             //Cierro pipes de hijos anteriores
-            printf("Player %d started with pid %d\n",i , getpid());
             for (int j = 0; j < i; j++) {
                 close(pipesFD[j][0]);
                 close(pipesFD[j][1]);
@@ -186,6 +194,7 @@ void forkPlayers(GameState *gameState, char playerPaths[MAX_PLAYERS][50] , int p
             }
         }
         else {
+            gameState->players[i].pid = pid;
             close(pipesFD[i][1]);
         }
     }
@@ -287,7 +296,6 @@ void closePipes(int pipes[MAX_PLAYERS][2], int cantPlayers){
 void waitChilds(GameState *gameState, int viewFlag, int viewPid){
     int status;
     for (size_t i = 0; i < gameState->cantPlayers; i++){
-        printf("Waiting for player %s with pid %d\n", gameState->players[i].name, gameState->players[i].pid);
         waitpid(gameState->players[i].pid, &status, 0);
         printf("%s exited with code %d, and scored %d with %d valid moves and %d invalid moves \n", gameState->players[i].name, WEXITSTATUS(status), gameState->players[i].score, gameState->players[i].validMoves, gameState->players[i].invalidMoves);
     }
@@ -307,11 +315,12 @@ int main (int argc, char *argv[]) {
     if(!getParameters(argc, argv, &params)){
 		return -1;
 	}
-
+    
     initializeSHM(&gameState, &params, &semaphores, SHMfds);
 
     int pipesFD[MAX_PLAYERS][2];
     forkPlayers(gameState, params.playerPaths, pipesFD);
+    
     int viewPid;
     if (params.viewFlag != 0){
         viewPid=forkView(params.view,gameState);
@@ -343,7 +352,6 @@ int main (int argc, char *argv[]) {
         // Zona critica: Modificar el estado del juego
         for (int i=0; i < gameState->cantPlayers;i++){
             if (block[i]) {
-                printf("Player %s is blocked and cannot move\n", gameState->players[i].name);
                 gameState->players[i].isBlocked=true;
                 sem_post(&semaphores->playerTurn[i]);
                 continue;
@@ -371,6 +379,7 @@ int main (int argc, char *argv[]) {
         if (params.viewFlag != 0){
            sem_post(&semaphores->readyToPrint);
            sem_wait(&semaphores->finishedPrinting);
+           sleepMs(params.delay);
         }
         if (readyPipes == 0){
             printf("Timeout reached. Ending game.\n");
@@ -386,5 +395,4 @@ int main (int argc, char *argv[]) {
 	closePipes(pipesFD, gameState->cantPlayers);
     closeSharedMemories(gameState, semaphores, SHMfds);
 	
-    
 }

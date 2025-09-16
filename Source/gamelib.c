@@ -7,7 +7,7 @@
 void initializeBoard(int* board, int width, int height, int seed) {
     srand(seed);
     for (int i = 0; i < width * height; i++) {
-        board[i] = rand() % 10; 
+        board[i] = rand() % 9 + 1; // Valores entre 1 y 9
     }
 }
 // Verifica si hay algun lugar libre alrededor del jugador, devolviendo false si lo hay.
@@ -56,7 +56,6 @@ void checkBlockedPlayers(bool block[], GameState* gameState){
             continue;
         }
         block[i]= playerIsBlocked(gameState->players[i].x, gameState->players[i].y, gameState->board, gameState->width, gameState->height);
-        printf("Player %s is %sblocked\n", gameState->players[i].name, block[i] ? "" : "not ");
     }
 }
 
