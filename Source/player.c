@@ -32,6 +32,25 @@ typedef struct
     unsigned int cantReading; // Number of players reading state
 } Sync;
 
+typedef struct {
+    unsigned short width;        // Ancho del tablero
+    unsigned short height;       // Alto del tablero
+    unsigned int cantPlayers;    // Cantidad de jugadores
+    Player players[MAX_PLAYERS]; // Lista de jugadores
+    bool gameFinished;           // Indica si el juego se ha terminado
+    int board[];                 // Puntero al comienzo del tablero. fila-0, fila-1, ..., fila-n-1
+} GameState;
+
+
+static int getMyId(GameState *gameState){
+    for (size_t i = 0; i < gameState->cantPlayers ; i++)
+    {
+        if (getpid() == gameState->players[i].pid)
+            return i;
+    }
+    return -1; //para que no de warning
+}
+
 void sleep_ms(int milliseconds)
 {
     struct timespec ts;
@@ -84,10 +103,11 @@ int main(int argc, char *argv[])
         perror("mmap");
         return 1;
     }
+    int id= getMyId(gameState);
 
     while (1)
     {
-
+        sem_wait(&sync->playerTurn[id]);
         sem_wait(&sync->turnstile);
         sem_post(&sync->turnstile);
 
