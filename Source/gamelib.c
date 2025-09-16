@@ -60,7 +60,7 @@ void checkBlockedPlayers(bool block[], GameState* gameState){
 }
 
 bool spaceOccupied(int landingSquare, GameState* gameState){
-    return gameState->board[landingSquare] < 0;
+    return gameState->board[landingSquare] <= 0;
 }
 
 int validSquare(GameState *gameState, int x, int y){
@@ -87,4 +87,13 @@ void movePlayer(int playerIndex, int landingSquare, GameState *gameState){
     gameState->board[landingSquare]= playerNumber; // ocupa la nueva posicion
     gameState->players[playerIndex].x= landingSquare % boardWidth;
     gameState->players[playerIndex].y= landingSquare / boardWidth;
+}
+
+void placePlayers(GameState *gameState){
+    int boardSize = gameState->width * gameState->height;
+    int separation = boardSize / (gameState->cantPlayers + 1);
+    for (size_t i = 0; i < gameState->cantPlayers; i++){
+        gameState->players[i].x = (separation * (i + 1)) % gameState->width;
+        gameState->players[i].y = (separation * (i + 1)) / gameState->width;
+    }
 }

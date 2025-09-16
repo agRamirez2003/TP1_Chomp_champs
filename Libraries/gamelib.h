@@ -30,4 +30,6 @@ void calculateNextPosition(int landingSquares[MAX_PLAYERS], int moves[MAX_PLAYER
 
 void movePlayer(int playerIndex, int landingSquare, GameState *gameState);
 
+void placePlayers(GameState *gameState);
+
 #endif // GAMELIB_H

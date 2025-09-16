@@ -320,6 +320,7 @@ int main (int argc, char *argv[]) {
 
     int pipesFD[MAX_PLAYERS][2];
     forkPlayers(gameState, params.playerPaths, pipesFD);
+    placePlayers(gameState);
     
     int viewPid;
     if (params.viewFlag != 0){
