@@ -251,11 +251,18 @@ void initializeSHM(GameState **gameState, Parameters *params, Semaphores **semap
     SHMfds[1] = initializeSemaphores(semaphores);
 }
 
-int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int pipes[MAX_PLAYERS][2], int cantPlayers){
+int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int pipes[MAX_PLAYERS][2], int cantPlayers, bool block[MAX_PLAYERS]){
     struct timeval tv;
     tv.tv_sec = timeout;
     tv.tv_usec = 0;  
 
+    for (size_t i = 0; i < cantPlayers; i++){
+        if(block[i]==false){
+            break;
+        }
+        return 0; // todos los jugadores estan bloqueados
+    }
+    
     int toReturn = select(maxFD +1, fdSet, NULL, NULL, &tv);
     if (toReturn <=0){
         return toReturn;
@@ -265,6 +272,11 @@ int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int p
         if (FD_ISSET(pipes[i][0], fdSet)){
             unsigned char move;
             read(pipes[i][0], &move, 1);
+            if (move == 0){
+                block[i] = true;
+                return toReturn;
+            }
+            
             moves[i] = (int)move;
         }
         else{
@@ -343,7 +355,7 @@ int main (int argc, char *argv[]) {
     while (!gameState->gameFinished) {
         checkBlockedPlayers(block, gameState);
         maxFD = prepareFDSet(&readablePipes, block, gameState->cantPlayers,pipesFD);
-        readyPipes= readMoves(moves, &readablePipes, maxFD ,params.timeout, pipesFD,gameState->cantPlayers); 
+        readyPipes= readMoves(moves, &readablePipes, maxFD ,params.timeout, pipesFD,gameState->cantPlayers, block); 
         if (readyPipes == -1){
             perror("select");
             break;
