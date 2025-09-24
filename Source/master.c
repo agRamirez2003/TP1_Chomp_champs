@@ -256,9 +256,10 @@ int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int p
     tv.tv_sec = timeout;
     tv.tv_usec = 0;  
 
-    if (everyoneBlocked(block, cantPlayers)){
-        return 0;
+    if (maxFD == -1){
+        return 0; // no hay pipes abiertos o todos los jugadores estan bloqueados
     }
+    
     
     
     int toReturn = select(maxFD +1, fdSet, NULL, NULL, &tv);
