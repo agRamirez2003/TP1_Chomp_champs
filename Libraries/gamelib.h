@@ -32,4 +32,6 @@ void movePlayer(int playerIndex, int landingSquare, GameState *gameState);
 
 void placePlayers(GameState *gameState);
 
+bool everyoneBlocked(bool block[], int cantPlayers);
+
 #endif // GAMELIB_H

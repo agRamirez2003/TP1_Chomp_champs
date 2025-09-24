@@ -28,6 +28,14 @@ static bool playerIsBlocked( int playerX, int playerY, int* board, int boardWidt
     }
     return true;
 }
+bool everyoneBlocked(bool block[], int cantPlayers){
+    for (size_t i = 0; i < cantPlayers; i++){
+        if (!block[i]){
+            return false;
+        }
+    }
+    return true;
+}
 
 int newXCalculator(int currentX, int  move){
 	int dx[8] = {0, 1, 1, 1, 0, -1, -1, -1};

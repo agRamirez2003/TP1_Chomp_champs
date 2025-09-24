@@ -256,14 +256,13 @@ int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int p
     tv.tv_sec = timeout;
     tv.tv_usec = 0;  
 
-    for (size_t i = 0; i < cantPlayers; i++){
-        if(block[i]==false){
-            break;
-        }
-        return 0; // todos los jugadores estan bloqueados
+    if (everyoneBlocked(block, cantPlayers)){
+        return 0;
     }
     
+    
     int toReturn = select(maxFD +1, fdSet, NULL, NULL, &tv);
+    
     if (toReturn <=0){
         return toReturn;
     }
@@ -271,8 +270,7 @@ int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int p
     for (size_t i = 0; i < cantPlayers; i++){
         if (FD_ISSET(pipes[i][0], fdSet)){
             unsigned char move;
-            read(pipes[i][0], &move, 1);
-            if (move == 0){
+            if (read(pipes[i][0], &move, 1) == 0){
                 block[i] = true;
                 return toReturn;
             }
