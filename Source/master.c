@@ -273,7 +273,7 @@ int readMoves(int moves[MAX_PLAYERS],fd_set *fdSet,int maxFD, int timeout, int p
             unsigned char move;
             if (read(pipes[i][0], &move, 1) == 0){
                 block[i] = true;
-                return toReturn;
+                continue;
             }
             
             moves[i] = (int)move;
